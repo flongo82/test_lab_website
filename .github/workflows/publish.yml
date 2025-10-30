@@ -27,7 +27,7 @@ jobs:
       - name: Install Python deps
         run: pip install -r requirements.txt
 
-      # 🔹 Configura pybliometrics (Scopus API) con entrambe le sezioni richieste
+      # 🔹 Configura pybliometrics (tutte le sezioni richieste)
       - name: Configure pybliometrics (Scopus API)
         shell: bash
         run: |
@@ -47,6 +47,12 @@ jobs:
           ScopusSearch=${HOME}/.cache/pybliometrics/ScopusSearch
           SerialTitle=${HOME}/.cache/pybliometrics/SerialTitle
           SubjectClassifications=${HOME}/.cache/pybliometrics/SubjectClassifications
+
+          [Requests]
+          # Valori prudenti; puoi modificarli se necessario
+          Timeout=20
+          MaxRetries=3
+          MinSleep=0.2
           EOF
 
       # 🔹 Recupera le pubblicazioni da Scopus e genera publications.bib
