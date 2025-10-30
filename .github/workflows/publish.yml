@@ -4,16 +4,46 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 3 * * 1"   # (opzionale) rigenera ogni lunedì 03:00
+    - cron: "0 3 * * 1"   # (facoltativo) rigenera ogni lunedì alle 03:00
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # consente di creare il branch gh-pages
     steps:
       - uses: actions/checkout@v4
+
       - uses: quarto-dev/quarto-actions/setup@v2
-      - uses: quarto-dev/quarto-actions/render@v2
-      - uses: quarto-dev/quarto-actions/publish@v2
+
+      # (facoltativo ma utile se usi librerie Python in futuro)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # 🔹 Step B: bootstrap gh-pages (solo la prima volta)
+      - name: Bootstrap gh-pages (first run only)
+        run: |
+          if ! git ls-remote --exit-code --heads origin gh-pages; then
+            echo "Initializing gh-pages branch..."
+            git checkout --orphan gh-pages
+            rm -rf .
+            touch .nojekyll
+            git -c user.name='github-actions' -c user.email='actions@github.com' add .nojekyll
+            git -c user.name='github-actions' -c user.email='actions@github.com' commit -m "Initialize gh-pages branch"
+            git push origin gh-pages
+            git switch -
+          else
+            echo "gh-pages branch already exists — skipping bootstrap."
+          fi
+
+      # 🔹 Render del sito
+      - name: Render site
+        uses: quarto-dev/quarto-actions/render@v2
+
+      # 🔹 Pubblica su gh-pages
+      - name: Publish to GitHub Pages
+        uses: quarto-dev/quarto-actions/publish@v2
         with:
           target: gh-pages
         env:
