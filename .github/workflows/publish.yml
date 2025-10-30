@@ -4,46 +4,51 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 3 * * 1"   # (facoltativo) rigenera lunedì alle 03:00 Europe/Rome
+    - cron: "0 3 * * 1"   # (facoltativo) rigenera ogni lunedì alle 03:00 Europe/Rome
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # serve per push su gh-pages
+
     steps:
+      # Clona il repository
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # Configura Python per lo script Scopus
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      # Installa le dipendenze Python
       - name: Install Python deps
         run: pip install -r requirements.txt
 
+      # 🔹 Configura pybliometrics (Scopus API)
       - name: Configure pybliometrics (Scopus API)
         run: |
-          mkdir -p ~/.pybliometrics
-          cat > ~/.pybliometrics/config.ini <<'EOF'
+          mkdir -p ~/.config
+          cat > ~/.config/pybliometrics.cfg <<'EOF'
           [Authentication]
           APIKey=${{ secrets.SCOPUS_API_KEY }}
           InstToken=
           view=STANDARD
           EOF
 
-      # 🔹 Genera publications.bib da Scopus
+      # 🔹 Recupera le pubblicazioni da Scopus e genera publications.bib
       - name: Fetch publications from Scopus
         env:
           SCOPUS_AUTHOR_IDS: ${{ vars.SCOPUS_AUTHOR_IDS }}
           SCOPUS_ORCIDS: ${{ vars.SCOPUS_ORCIDS }}
         run: |
           python scripts/scopus_to_bib.py
-          echo "Contenuto publications.bib:"
-          head -n 50 publications.bib || true
+          echo "Contenuto di publications.bib:"
+          head -n 40 publications.bib || true
 
-      # (opzionale) Committa il bib generato se vuoi tenerlo versionato
+      # (facoltativo) Committa publications.bib per tenerlo nel repo
       - name: Commit updated publications.bib
         run: |
           if ! git diff --quiet publications.bib; then
@@ -55,11 +60,14 @@ jobs:
             echo "Nessuna modifica in publications.bib"
           fi
 
+      # Configura Quarto
       - uses: quarto-dev/quarto-actions/setup@v2
 
+      # Render del sito (usa publications.bib generato)
       - name: Render site
         uses: quarto-dev/quarto-actions/render@v2
 
+      # Pubblica su GitHub Pages
       - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
         with:
