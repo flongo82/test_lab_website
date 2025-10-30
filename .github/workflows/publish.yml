@@ -14,39 +14,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # buona pratica quando si creano nuovi branch
+          fetch-depth: 0   # utile quando si creano nuovi branch
 
       - uses: quarto-dev/quarto-actions/setup@v2
 
-      # (facoltativo) Python se in futuro servirà
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # 🔹 Bootstrap gh-pages (solo la prima volta) — versione FIX
+      # 🔹 Bootstrap gh-pages (solo la prima volta) — ritorno esplicito al branch di partenza
       - name: Bootstrap gh-pages (first run only)
         shell: bash
+        env:
+          START_BRANCH: ${{ github.ref_name }}   # es. "main"
         run: |
+          # Salva il branch di partenza (fallback a main se vuoto)
+          PREV_BRANCH="${START_BRANCH:-main}"
+          echo "Starting branch: $PREV_BRANCH"
+
           if ! git ls-remote --exit-code --heads origin gh-pages; then
             echo "Initializing gh-pages branch..."
             git checkout --orphan gh-pages
-            # svuota index e working tree dal contenuto del branch precedente
             git reset --hard
-            # file segnaposto per Pages
             touch .nojekyll
             git -c user.name='github-actions' -c user.email='actions@github.com' add .nojekyll
             git -c user.name='github-actions' -c user.email='actions@github.com' commit -m "Initialize gh-pages branch"
             git push origin gh-pages
-            git switch -
+
+            # Torna in modo esplicito al branch di partenza
+            git checkout "$PREV_BRANCH"
           else
             echo "gh-pages branch already exists — skipping bootstrap."
           fi
 
-      # 🔹 Render del sito
       - name: Render site
         uses: quarto-dev/quarto-actions/render@v2
 
-      # 🔹 Pubblica su gh-pages
       - name: Publish to GitHub Pages
         uses: quarto-dev/quarto-actions/publish@v2
         with:
