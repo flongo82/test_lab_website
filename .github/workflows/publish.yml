@@ -10,24 +10,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # consente di creare il branch gh-pages
+      contents: write   # consente di creare/pushare gh-pages
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # buona pratica quando si creano nuovi branch
 
       - uses: quarto-dev/quarto-actions/setup@v2
 
-      # (facoltativo ma utile se usi librerie Python in futuro)
+      # (facoltativo) Python se in futuro servirà
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # 🔹 Step B: bootstrap gh-pages (solo la prima volta)
+      # 🔹 Bootstrap gh-pages (solo la prima volta) — versione FIX
       - name: Bootstrap gh-pages (first run only)
+        shell: bash
         run: |
           if ! git ls-remote --exit-code --heads origin gh-pages; then
             echo "Initializing gh-pages branch..."
             git checkout --orphan gh-pages
-            rm -rf .
+            # svuota index e working tree dal contenuto del branch precedente
+            git reset --hard
+            # file segnaposto per Pages
             touch .nojekyll
             git -c user.name='github-actions' -c user.email='actions@github.com' add .nojekyll
             git -c user.name='github-actions' -c user.email='actions@github.com' commit -m "Initialize gh-pages branch"
