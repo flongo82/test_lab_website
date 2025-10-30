@@ -1,0 +1,12 @@
+---
+title: "Pubblicazioni"
+bibliography: publications.bib
+csl: https://www.zotero.org/styles/ieee  # cambia stile se vuoi (APA, ACM, ecc.)
+nocite: |
+  @*   # mostra tutte le voci della .bib anche se non citate nel testo
+---
+
+# Pubblicazioni
+
+::: {#refs}
+:::
