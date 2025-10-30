@@ -1,0 +1,13 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "STRATUS Lab"
+  navbar: false
+  page-navigation: false
+
+format:
+  html:
+    theme: cosmo
+    toc: false
